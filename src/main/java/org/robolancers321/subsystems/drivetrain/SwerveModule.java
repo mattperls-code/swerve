@@ -72,11 +72,11 @@ public class SwerveModule {
     private static double kDriveP = 0.0;
     private static double kDriveI = 0.0;
     private static double kDriveD = 0.0;
-    private static double kDriveFF = 0.30;
+    private static double kDriveFF = 0.0;
 
-    private static double kTurnP = 0.40;
+    private static double kTurnP = 0.0;
     private static double kTurnI = 0.0;
-    private static double kTurnD = 0.0020;
+    private static double kTurnD = 0.0;
 
     /*
      * Implementation
@@ -172,5 +172,34 @@ public class SwerveModule {
     public void doSendables(){
         SmartDashboard.putNumber(this.id + " Drive Vel (m/s)", this.getDriveVelocity());
         SmartDashboard.putNumber(this.id + " Turn Angle (deg)", this.getTurnAngleDeg());
+    }
+
+    public static void initTuning(){
+        SmartDashboard.putNumber("drive kp", SmartDashboard.getNumber("drive kp", kDriveP));
+        SmartDashboard.putNumber("drive ki", SmartDashboard.getNumber("drive ki", kDriveI));
+        SmartDashboard.putNumber("drive kd", SmartDashboard.getNumber("drive kd", kDriveD));
+        SmartDashboard.putNumber("drive kff", SmartDashboard.getNumber("drive kff", kDriveFF));
+        
+        SmartDashboard.putNumber("turn kp", SmartDashboard.getNumber("turn kp", kTurnP));
+        SmartDashboard.putNumber("turn ki", SmartDashboard.getNumber("turn ki", kTurnI));
+        SmartDashboard.putNumber("turn kd", SmartDashboard.getNumber("turn kd", kTurnD));
+    }
+
+    public void tune(){
+        double tunedDriveP = SmartDashboard.getNumber("drive kp", kDriveP);
+        double tunedDriveI = SmartDashboard.getNumber("drive ki", kDriveI);
+        double tunedDriveD = SmartDashboard.getNumber("drive kd", kDriveD);
+        double tunedDriveFF = SmartDashboard.getNumber("drive kff", kDriveFF);
+
+        this.driveController.setP(tunedDriveP);
+        this.driveController.setI(tunedDriveI);
+        this.driveController.setD(tunedDriveD);
+        this.driveController.setFF(tunedDriveFF);
+
+        double tunedTurnP = SmartDashboard.getNumber("turn kp", kTurnP);
+        double tunedTurnI = SmartDashboard.getNumber("turn ki", kTurnI);
+        double tunedTurnD = SmartDashboard.getNumber("turn kd", kTurnD);
+
+        this.turnController.setPID(tunedTurnP, tunedTurnI, tunedTurnD);
     }
 }

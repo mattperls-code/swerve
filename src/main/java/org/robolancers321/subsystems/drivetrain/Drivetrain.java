@@ -38,10 +38,10 @@ public class Drivetrain extends SubsystemBase {
     private static double kMaxOmegaRadiansPerSecond = 1.5 * Math.PI;
 
     private static SwerveDriveKinematics kSwerveKinematics = new SwerveDriveKinematics(
-        new Translation2d(kTrackWidthMeters / 2, kWheelBaseMeters / 2), // front left
-        new Translation2d(kTrackWidthMeters / 2, -kWheelBaseMeters / 2), // front right
-        new Translation2d(-kTrackWidthMeters / 2, kWheelBaseMeters / 2), // back left
-        new Translation2d(-kTrackWidthMeters / 2, -kWheelBaseMeters / 2) // back right
+        new Translation2d(0.5 * kTrackWidthMeters, 0.5 * kWheelBaseMeters), // front left
+        new Translation2d(0.5 * kTrackWidthMeters, -0.5 * kWheelBaseMeters), // front right
+        new Translation2d(-0.5 * kTrackWidthMeters, 0.5 * kWheelBaseMeters), // back left
+        new Translation2d(-0.5 * kTrackWidthMeters, -0.5 * kWheelBaseMeters) // back right
     );
 
     /*
@@ -67,6 +67,8 @@ public class Drivetrain extends SubsystemBase {
         this.gyro.zeroYaw();
 
         this.odometry = new SwerveDrivePoseEstimator(kSwerveKinematics, gyro.getRotation2d(), getModulePositions(), new Pose2d());
+
+        SwerveModule.initTuning();
     }
 
     private SwerveModulePosition[] getModulePositions(){
@@ -146,5 +148,10 @@ public class Drivetrain extends SubsystemBase {
         this.frontRight.doSendables();
         this.backLeft.doSendables();
         this.backRight.doSendables();
+
+        this.frontLeft.tune();
+        this.frontRight.tune();
+        this.backLeft.tune();
+        this.backRight.tune();
     }
 }
