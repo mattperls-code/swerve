@@ -37,7 +37,7 @@ public class Drivetrain extends SubsystemBase {
     private static double kMaxSpeedMetersPerSecond = 4.0;
     private static double kMaxOmegaRadiansPerSecond = 1.5 * Math.PI;
 
-    private static final SwerveDriveKinematics kSwerveKinematics = new SwerveDriveKinematics(
+    private static SwerveDriveKinematics kSwerveKinematics = new SwerveDriveKinematics(
         new Translation2d(kTrackWidthMeters / 2, kWheelBaseMeters / 2), // front left
         new Translation2d(kTrackWidthMeters / 2, -kWheelBaseMeters / 2), // front right
         new Translation2d(-kTrackWidthMeters / 2, kWheelBaseMeters / 2), // back left
