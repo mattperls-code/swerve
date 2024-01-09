@@ -149,6 +149,7 @@ public class Drivetrain extends SubsystemBase {
 
     @Override
     public void periodic(){
+        // TODO: this breaks with photon vision installed?
         // this.odometry.update(this.gyro.getRotation2d(), this.getModulePositions());
 
         this.doSendables();

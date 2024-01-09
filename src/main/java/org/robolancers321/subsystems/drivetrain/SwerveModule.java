@@ -24,15 +24,9 @@ public class SwerveModule {
      * Singletons
      */
 
-    // respective offsets are: 
-    //  235.546875
-    //  -84.7265625
-    //  118.65234375
-    //  169.98046875
-
     private static SwerveModule frontLeft = null;
     public static SwerveModule getFrontLeft(){
-        if (frontLeft == null) frontLeft = new SwerveModule("Front Left", 4, 3, 15, true, false, false, 235.546875 + 180.0);
+        if (frontLeft == null) frontLeft = new SwerveModule("Front Left", 4, 3, 15, true, false, false, 415.546875);
 
         return frontLeft;
     }
@@ -46,14 +40,14 @@ public class SwerveModule {
 
     private static SwerveModule backLeft = null;
     public static SwerveModule getBackLeft(){
-        if (backLeft == null) backLeft = new SwerveModule("Back Left", 2, 1, 14, false, false, false, 118.65234375 + 180.0);
+        if (backLeft == null) backLeft = new SwerveModule("Back Left", 2, 1, 14, false, false, false, 298.65234375);
 
         return backLeft;
     }
 
     private static SwerveModule backRight = null;
     public static SwerveModule getBackRight(){
-        if (backRight == null) backRight = new SwerveModule("Back Right", 8, 7, 13, true, false, false, 169.98046875 + 180.0);
+        if (backRight == null) backRight = new SwerveModule("Back Right", 8, 7, 13, true, false, false, 349.98046875);
 
         return backRight;
     }
