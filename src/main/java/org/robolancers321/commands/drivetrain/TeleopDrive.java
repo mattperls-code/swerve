@@ -32,12 +32,16 @@ public class TeleopDrive extends CommandBase {
 
         // TODO: any preprocessing for desired input should be done here
 
+        desiredThrottle *= 1.2;
+        desiredStrafe *= 1.2;
+        desiredOmega *= 3.0;
+
         // for debug
         SmartDashboard.putNumber("drive throttle", desiredThrottle);
         SmartDashboard.putNumber("drive strafe", desiredStrafe);
         SmartDashboard.putNumber("drive omega", desiredOmega);
 
-        this.drivetrain.drive(desiredThrottle, desiredStrafe, desiredOmega, true);
+        this.drivetrain.drive(-desiredStrafe, -desiredThrottle, -desiredOmega, true);
     }
 
     @Override

@@ -24,30 +24,36 @@ public class SwerveModule {
      * Singletons
      */
 
+    // respective offsets are: 
+    //  235.546875
+    //  -84.7265625
+    //  118.65234375
+    //  169.98046875
+
     private static SwerveModule frontLeft = null;
     public static SwerveModule getFrontLeft(){
-        if (frontLeft == null) frontLeft = new SwerveModule("Front Left", 19, 18, 3, true, false, 58.87907200420464);
+        if (frontLeft == null) frontLeft = new SwerveModule("Front Left", 4, 3, 15, true, false, false, 235.546875 + 180.0);
 
         return frontLeft;
     }
 
     private static SwerveModule frontRight = null;
     public static SwerveModule getFrontRight(){
-        if (frontRight == null) frontRight = new SwerveModule("Front Right", 11, 10, 1, true, false, -128.44749934250595);
+        if (frontRight == null) frontRight = new SwerveModule("Front Right", 6, 5, 16, false, false, false, -84.7265625);
 
         return frontRight;
     }
 
     private static SwerveModule backLeft = null;
     public static SwerveModule getBackLeft(){
-        if (backLeft == null) backLeft = new SwerveModule("Back Left", 3, 2, 2, true, false, 107.41925934100429);
+        if (backLeft == null) backLeft = new SwerveModule("Back Left", 2, 1, 14, false, false, false, 118.65234375 + 180.0);
 
         return backLeft;
     }
 
     private static SwerveModule backRight = null;
     public static SwerveModule getBackRight(){
-        if (backRight == null) backRight = new SwerveModule("Back Right", 5, 6, 4, true, false, -142.90441434353835);
+        if (backRight == null) backRight = new SwerveModule("Back Right", 8, 7, 13, true, false, false, 169.98046875 + 180.0);
 
         return backRight;
     }
@@ -69,14 +75,14 @@ public class SwerveModule {
     private static double kGearRatio = 6.8;
     private static double kRPMToMPS = 2 * Math.PI * kWheelRadiusMeters / (kGearRatio * 60.0);
 
-    private static double kDriveP = 0.0;
-    private static double kDriveI = 0.0;
-    private static double kDriveD = 0.0;
-    private static double kDriveFF = 0.0;
+    private static double kDriveP = 0.00;
+    private static double kDriveI = 0.00;
+    private static double kDriveD = 0.00;
+    private static double kDriveFF = 0.20;
 
-    private static double kTurnP = 0.0;
-    private static double kTurnI = 0.0;
-    private static double kTurnD = 0.0;
+    private static double kTurnP = 0.50;
+    private static double kTurnI = 0.00;
+    private static double kTurnD = 0.00;
 
     /*
      * Implementation
@@ -93,11 +99,11 @@ public class SwerveModule {
     private SparkMaxPIDController driveController;
     private PIDController turnController;
 
-    private SwerveModule(String id, int driveMotorPort, int turnMotorPort, int turnEncoderPort, boolean invertDriveMotor, boolean invertTurnMotor, double turnEncoderOffset){
+    private SwerveModule(String id, int driveMotorPort, int turnMotorPort, int turnEncoderPort, boolean invertDriveMotor, boolean invertTurnMotor, boolean invertTurnEncoder, double turnEncoderOffset){
         this.id = id;
 
         this.configDrive(driveMotorPort, invertDriveMotor);
-        this.configTurn(turnMotorPort, turnEncoderPort, invertTurnMotor, turnEncoderOffset);
+        this.configTurn(turnMotorPort, turnEncoderPort, invertTurnMotor, invertTurnEncoder, turnEncoderOffset);
     }
 
     private void configDrive(int driveMotorPort, boolean invertDriveMotor){
@@ -119,7 +125,7 @@ public class SwerveModule {
         this.driveController.setFF(kDriveFF);
     }
 
-    private void configTurn(int turnMotorPort, int turnEncoderPort, boolean invertTurnMotor, double turnEncoderOffset){
+    private void configTurn(int turnMotorPort, int turnEncoderPort, boolean invertTurnMotor, boolean invertTurnEncoder, double turnEncoderOffset){
         this.turnMotor = new CANSparkMax(turnMotorPort, MotorType.kBrushless);
         
         this.turnMotor.setInverted(invertTurnMotor);
@@ -132,10 +138,11 @@ public class SwerveModule {
 
         CANCoderConfiguration config = kCANCoderConfig;
         config.magnetOffsetDegrees = turnEncoderOffset;
+        config.sensorDirection = invertTurnEncoder;
 
         this.turnEncoder.configAllSettings(config);
 
-        this.turnController.setPID(kTurnP, kTurnI, kTurnD);
+        this.turnController = new PIDController(kTurnP, kTurnI, kTurnD);
         this.turnController.enableContinuousInput(-Math.PI, Math.PI);
     }
 
@@ -148,7 +155,7 @@ public class SwerveModule {
     }
 
     public double getTurnAngleDeg(){
-        return this.turnEncoder.getPosition() * 180.0 / Math.PI;
+        return this.getTurnAngleRad() * 180.0 / Math.PI;
     }
 
     public SwerveModulePosition getPosition(){

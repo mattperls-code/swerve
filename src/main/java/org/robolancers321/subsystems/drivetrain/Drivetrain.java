@@ -64,11 +64,11 @@ public class Drivetrain extends SubsystemBase {
         this.backRight = SwerveModule.getBackRight();
 
         this.gyro = new AHRS(SPI.Port.kMXP);
-        this.gyro.zeroYaw();
+        this.zeroYaw();
 
         this.odometry = new SwerveDrivePoseEstimator(kSwerveKinematics, gyro.getRotation2d(), getModulePositions(), new Pose2d());
 
-        SwerveModule.initTuning();
+        // SwerveModule.initTuning();
     }
 
     private SwerveModulePosition[] getModulePositions(){
@@ -86,6 +86,10 @@ public class Drivetrain extends SubsystemBase {
 
     public Pose2d getOdometryEstimatedPose(){
         return this.odometry.getEstimatedPosition();
+    }
+
+    public void zeroYaw(){
+        this.gyro.zeroYaw();
     }
 
     public void updateModules(SwerveModuleState[] states){
@@ -126,6 +130,11 @@ public class Drivetrain extends SubsystemBase {
         updateModules(states);
     }
 
+    // for tuning
+    public void drive(SwerveModuleState[] states){
+        updateModules(states);
+    }
+
     private void doSendables(){
         SmartDashboard.putNumber("Drive Heading", this.getYawDeg());
 
@@ -140,7 +149,7 @@ public class Drivetrain extends SubsystemBase {
 
     @Override
     public void periodic(){
-        this.odometry.update(this.gyro.getRotation2d(), this.getModulePositions());
+        // this.odometry.update(this.gyro.getRotation2d(), this.getModulePositions());
 
         this.doSendables();
 
@@ -149,9 +158,9 @@ public class Drivetrain extends SubsystemBase {
         this.backLeft.doSendables();
         this.backRight.doSendables();
 
-        this.frontLeft.tune();
-        this.frontRight.tune();
-        this.backLeft.tune();
-        this.backRight.tune();
+        // this.frontLeft.tune();
+        // this.frontRight.tune();
+        // this.backLeft.tune();
+        // this.backRight.tune();
     }
 }
