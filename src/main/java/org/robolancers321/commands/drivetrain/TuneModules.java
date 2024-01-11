@@ -1,6 +1,7 @@
 package org.robolancers321.commands.drivetrain;
 
 import org.robolancers321.subsystems.drivetrain.Drivetrain;
+import org.robolancers321.subsystems.drivetrain.SwerveModule;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
@@ -12,6 +13,8 @@ public class TuneModules extends Command {
 
     public TuneModules(){
         this.drivetrain = Drivetrain.getInstance();
+
+        SwerveModule.initTuning();
 
         SmartDashboard.putNumber("target module angle (deg)", 0.0);
         SmartDashboard.putNumber("target module vel (m/s)", 0.0);
@@ -30,7 +33,7 @@ public class TuneModules extends Command {
             states[i] = new SwerveModuleState(vel, Rotation2d.fromDegrees(theta));
         }
 
-        this.drivetrain.drive(states);
+        this.drivetrain.tuneDrive(states);
     }
 
     @Override

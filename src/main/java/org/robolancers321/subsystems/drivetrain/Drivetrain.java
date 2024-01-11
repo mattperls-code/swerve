@@ -1,6 +1,10 @@
 package org.robolancers321.subsystems.drivetrain;
 
 import com.kauailabs.navx.frc.AHRS;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
+import com.pathplanner.lib.util.PIDConstants;
+import com.pathplanner.lib.util.ReplanningConfig;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
@@ -11,6 +15,7 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -43,6 +48,15 @@ public class Drivetrain extends SubsystemBase {
         new Translation2d(-0.5 * kTrackWidthMeters, 0.5 * kWheelBaseMeters), // back left
         new Translation2d(-0.5 * kTrackWidthMeters, -0.5 * kWheelBaseMeters) // back right
     );
+    
+    // TODO: are these constants different than those of the DriveToTarget command?
+    private static final double kTranslationP = 0.0;
+    private static final double kTranslationI = 0.0;
+    private static final double kTranslationD = 0.0;
+
+    private static final double kRotationP = 0.0;
+    private static final double kRotationI = 0.0;
+    private static final double kRotationD = 0.0;
 
     /*
      * Implementation
@@ -66,9 +80,50 @@ public class Drivetrain extends SubsystemBase {
         this.gyro = new AHRS(SPI.Port.kMXP);
         this.zeroYaw();
 
-        this.odometry = new SwerveDrivePoseEstimator(kSwerveKinematics, gyro.getRotation2d(), this.getModulePositions(), new Pose2d());
+        this.odometry = new SwerveDrivePoseEstimator(kSwerveKinematics, this.gyro.getRotation2d(), this.getModulePositions(), new Pose2d());
 
-        // SwerveModule.initTuning();
+        AutoBuilder.configureHolonomic(
+            this::getPose,
+            this::resetPose,
+            this::getChassisSpeeds,
+            this::drive,
+            new HolonomicPathFollowerConfig(
+                new PIDConstants(kTranslationP, kTranslationI, kTranslationD),
+                new PIDConstants(kRotationP, kRotationI, kRotationD),
+                kMaxSpeedMetersPerSecond,
+                0.5 * Math.hypot(kTrackWidthMeters, kWheelBaseMeters),
+                new ReplanningConfig()
+            ),
+            () -> {
+                var myAlliance = DriverStation.getAlliance();
+
+                if (myAlliance.isPresent()) return myAlliance.get() == DriverStation.Alliance.Red;
+
+                return false;
+            },
+            this
+        );
+    }
+
+    public Pose2d getPose(){
+        return this.odometry.getEstimatedPosition();
+    }
+
+    public void resetPose(Pose2d pose){
+        this.odometry.resetPosition(this.gyro.getRotation2d(), this.getModulePositions(), pose);
+    }
+
+    private SwerveModuleState[] getModuleStates(){
+        return new SwerveModuleState[] {
+            this.frontLeft.getState(),
+            this.frontRight.getState(),
+            this.backLeft.getState(),
+            this.backRight.getState()
+        };
+    }
+
+    public ChassisSpeeds getChassisSpeeds(){
+        return kSwerveKinematics.toChassisSpeeds(this.getModuleStates());
     }
 
     private SwerveModulePosition[] getModulePositions(){
@@ -130,8 +185,12 @@ public class Drivetrain extends SubsystemBase {
         this.updateModules(states);
     }
 
-    // for tuning
-    public void drive(SwerveModuleState[] states){
+    public void tuneDrive(SwerveModuleState[] states){
+        this.frontLeft.tune();
+        this.frontRight.tune();
+        this.backLeft.tune();
+        this.backRight.tune();
+
         this.updateModules(states);
     }
 
@@ -150,7 +209,7 @@ public class Drivetrain extends SubsystemBase {
     @Override
     public void periodic(){
         // TODO: this breaks with photon vision installed?
-        // this.odometry.update(this.gyro.getRotation2d(), this.getModulePositions());
+        this.odometry.update(this.gyro.getRotation2d(), this.getModulePositions());
 
         this.doSendables();
 
@@ -158,10 +217,5 @@ public class Drivetrain extends SubsystemBase {
         this.frontRight.doSendables();
         this.backLeft.doSendables();
         this.backRight.doSendables();
-
-        // this.frontLeft.tune();
-        // this.frontRight.tune();
-        // this.backLeft.tune();
-        // this.backRight.tune();
     }
 }
