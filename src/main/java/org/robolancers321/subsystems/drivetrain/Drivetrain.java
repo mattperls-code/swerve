@@ -31,13 +31,13 @@ public class Drivetrain extends SubsystemBase {
      * Constants
      */
 
-    private static double kTrackWidthMeters = Units.inchesToMeters(17.5);
-    private static double kWheelBaseMeters = Units.inchesToMeters(17.5);
+    private static final double kTrackWidthMeters = Units.inchesToMeters(17.5);
+    private static final double kWheelBaseMeters = Units.inchesToMeters(17.5);
 
-    private static double kMaxSpeedMetersPerSecond = 4.0;
-    private static double kMaxOmegaRadiansPerSecond = 1.5 * Math.PI;
+    private static final double kMaxSpeedMetersPerSecond = 4.0;
+    private static final double kMaxOmegaRadiansPerSecond = 1.5 * Math.PI;
 
-    private static SwerveDriveKinematics kSwerveKinematics = new SwerveDriveKinematics(
+    private static final SwerveDriveKinematics kSwerveKinematics = new SwerveDriveKinematics(
         new Translation2d(0.5 * kTrackWidthMeters, 0.5 * kWheelBaseMeters), // front left
         new Translation2d(0.5 * kTrackWidthMeters, -0.5 * kWheelBaseMeters), // front right
         new Translation2d(-0.5 * kTrackWidthMeters, 0.5 * kWheelBaseMeters), // back left
@@ -66,7 +66,7 @@ public class Drivetrain extends SubsystemBase {
         this.gyro = new AHRS(SPI.Port.kMXP);
         this.zeroYaw();
 
-        this.odometry = new SwerveDrivePoseEstimator(kSwerveKinematics, gyro.getRotation2d(), getModulePositions(), new Pose2d());
+        this.odometry = new SwerveDrivePoseEstimator(kSwerveKinematics, gyro.getRotation2d(), this.getModulePositions(), new Pose2d());
 
         // SwerveModule.initTuning();
     }
@@ -127,12 +127,12 @@ public class Drivetrain extends SubsystemBase {
 
         SwerveDriveKinematics.desaturateWheelSpeeds(states, kMaxSpeedMetersPerSecond);
 
-        updateModules(states);
+        this.updateModules(states);
     }
 
     // for tuning
     public void drive(SwerveModuleState[] states){
-        updateModules(states);
+        this.updateModules(states);
     }
 
     private void doSendables(){
