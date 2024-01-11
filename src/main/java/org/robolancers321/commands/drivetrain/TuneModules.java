@@ -5,24 +5,24 @@ import org.robolancers321.subsystems.drivetrain.Drivetrain;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.CommandBase;
+import edu.wpi.first.wpilibj2.command.Command;
 
-public class TuneDrive extends CommandBase {
+public class TuneModules extends Command {
     private Drivetrain drivetrain;
 
-    public TuneDrive(){
+    public TuneModules(){
         this.drivetrain = Drivetrain.getInstance();
 
-        SmartDashboard.putNumber("target angle (deg)", 0.0);
-        SmartDashboard.putNumber("target vel (m/s)", 0.0);
+        SmartDashboard.putNumber("target module angle (deg)", 0.0);
+        SmartDashboard.putNumber("target module vel (m/s)", 0.0);
 
-        addRequirements(this.drivetrain);
+        this.addRequirements(this.drivetrain);
     }
 
     @Override
     public void execute(){
-        double theta = SmartDashboard.getNumber("target angle (deg)", 0.0);
-        double vel = SmartDashboard.getNumber("target vel (m/s)", 0.0);
+        double theta = SmartDashboard.getNumber("target module angle (deg)", 0.0);
+        double vel = SmartDashboard.getNumber("target module vel (m/s)", 0.0);
 
         SwerveModuleState[] states = new SwerveModuleState[4];
 
