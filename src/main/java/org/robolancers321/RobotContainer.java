@@ -1,11 +1,11 @@
 package org.robolancers321;
 
 import org.robolancers321.commands.drivetrain.TeleopDrive;
-import org.robolancers321.commands.drivetrain.TuneDriveToTarget;
 import org.robolancers321.subsystems.drivetrain.Drivetrain;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.commands.PathPlannerAuto;
 
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -35,8 +35,6 @@ public class RobotContainer {
   private void configureBindings() {
     this.drivetrain.setDefaultCommand(new TeleopDrive(this.controller));
 
-    new Trigger(this.controller::getXButton).whileTrue(new TuneDriveToTarget(0.0, 1.0, 0.0));
-    
     new Trigger(this.controller::getAButton).onTrue(new InstantCommand(this.drivetrain::zeroYaw));
   }
 
@@ -47,6 +45,8 @@ public class RobotContainer {
   }
 
   public Command getAutonomousCommand() {
-    return this.autoChooser.getSelected();
+    return new PathPlannerAuto("Example Auto");
+
+    // return this.autoChooser.getSelected();
   }
 }

@@ -1,7 +1,12 @@
 package org.robolancers321.subsystems.drivetrain;
 
+import java.util.Arrays;
+import java.util.List;
+
 import com.kauailabs.navx.frc.AHRS;
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.path.PathConstraints;
+import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.ReplanningConfig;
@@ -17,7 +22,9 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.SPI;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Drivetrain extends SubsystemBase {
@@ -42,14 +49,17 @@ public class Drivetrain extends SubsystemBase {
     private static final double kMaxSpeedMetersPerSecond = 4.0;
     private static final double kMaxOmegaRadiansPerSecond = 1.5 * Math.PI;
 
+    private final static PathConstraints kAutoConstraints = new PathConstraints(3.0, 3.0, 540 * Math.PI / 180, 720 * Math.PI / 180);
+
     private static final SwerveDriveKinematics kSwerveKinematics = new SwerveDriveKinematics(
         new Translation2d(0.5 * kTrackWidthMeters, 0.5 * kWheelBaseMeters), // front left
         new Translation2d(0.5 * kTrackWidthMeters, -0.5 * kWheelBaseMeters), // front right
         new Translation2d(-0.5 * kTrackWidthMeters, 0.5 * kWheelBaseMeters), // back left
         new Translation2d(-0.5 * kTrackWidthMeters, -0.5 * kWheelBaseMeters) // back right
     );
+
+    private static double kSecondOrderKinematicsDt = 0.2;
     
-    // TODO: are these constants different than those of the DriveToTarget command?
     private static final double kTranslationP = 0.0;
     private static final double kTranslationI = 0.0;
     private static final double kTranslationD = 0.0;
@@ -71,6 +81,8 @@ public class Drivetrain extends SubsystemBase {
 
     private SwerveDrivePoseEstimator odometry;
 
+    private Field2d field;
+
     private Drivetrain(){
         this.frontLeft = SwerveModule.getFrontLeft();
         this.frontRight = SwerveModule.getFrontRight();
@@ -81,6 +93,10 @@ public class Drivetrain extends SubsystemBase {
         this.zeroYaw();
 
         this.odometry = new SwerveDrivePoseEstimator(kSwerveKinematics, this.gyro.getRotation2d(), this.getModulePositions(), new Pose2d());
+
+        this.field = new Field2d();
+
+        SmartDashboard.putData(this.field);
 
         AutoBuilder.configureHolonomic(
             this::getPose,
@@ -145,6 +161,7 @@ public class Drivetrain extends SubsystemBase {
 
     public void zeroYaw(){
         this.gyro.zeroYaw();
+        this.gyro.setAngleAdjustment(90.0); // TODO: change this depending on navx orientation
     }
 
     public void updateModules(SwerveModuleState[] states){
@@ -158,11 +175,8 @@ public class Drivetrain extends SubsystemBase {
         double correctedOmega = MathUtil.clamp(desiredOmegaRadPerSec, -kMaxOmegaRadiansPerSecond, kMaxOmegaRadiansPerSecond);
 
         // apply corrective pose logarithm
-
-        // TODO: dt is technically an empirical constant and may need to be adjusted
-        double dt = 0.2;
-
-        double angularDisplacement = correctedOmega * dt;
+        double dt = kSecondOrderKinematicsDt;
+        double angularDisplacement = -correctedOmega * dt; // TODO: why is this negative, maybe gyro orientation
 
         double sin = Math.sin(0.5 * angularDisplacement);
         double cos = Math.cos(0.5 * angularDisplacement);
@@ -194,6 +208,10 @@ public class Drivetrain extends SubsystemBase {
         this.updateModules(states);
     }
 
+    public Command followPath(PathPlannerPath path){
+        return AutoBuilder.followPath(path);
+    }
+
     private void doSendables(){
         SmartDashboard.putNumber("Drive Heading", this.getYawDeg());
 
@@ -208,8 +226,9 @@ public class Drivetrain extends SubsystemBase {
 
     @Override
     public void periodic(){
-        // TODO: this breaks with photon vision installed?
         this.odometry.update(this.gyro.getRotation2d(), this.getModulePositions());
+
+        this.field.setRobotPose(this.getOdometryEstimatedPose());
 
         this.doSendables();
 

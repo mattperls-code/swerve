@@ -7,7 +7,9 @@ import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 import org.robolancers321.subsystems.drivetrain.Drivetrain;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -17,11 +19,11 @@ public class TuneDriveToTarget extends Command {
      * Constants
      */
 
-    private static final double kTranslationP = 0.0;
+    private static final double kTranslationP = 0.4;
     private static final double kTranslationI = 0.0;
     private static final double kTranslationD = 0.0;
 
-    private static final double kRotationP = 0.0;
+    private static final double kRotationP = 0.3;
     private static final double kRotationI = 0.0;
     private static final double kRotationD = 0.0;
 
@@ -36,20 +38,18 @@ public class TuneDriveToTarget extends Command {
     DoubleSupplier desiredDzSupplier;
     DoubleSupplier desiredDThetaSupplier;
 
-    PIDController xController;
-    PIDController zController;
+    PIDController positionController;
     PIDController thetaController;
 
     public TuneDriveToTarget(DoubleSupplier desiredDxSupplier, DoubleSupplier desiredDzSupplier, DoubleSupplier desiredDThetaSupplier){
         this.drivetrain = Drivetrain.getInstance();
-        this.camera = new PhotonCamera("photonvision");
+        this.camera = new PhotonCamera("camera");
 
         this.desiredDxSupplier = desiredDxSupplier;
         this.desiredDzSupplier = desiredDzSupplier;
         this.desiredDThetaSupplier = desiredDThetaSupplier;
 
-        this.xController = new PIDController(kTranslationP, kTranslationI, kTranslationD);
-        this.zController = new PIDController(kTranslationP, kTranslationI, kTranslationD);
+        this.positionController = new PIDController(kTranslationP, kTranslationI, kTranslationD);
         this.thetaController = new PIDController(kRotationP, kRotationI, kRotationD);
 
         SmartDashboard.putNumber("translation controller kp", SmartDashboard.getNumber("translation controller kp", kTranslationP));
@@ -73,8 +73,7 @@ public class TuneDriveToTarget extends Command {
         double tunedTranslationI = SmartDashboard.getNumber("translation controller ki", kTranslationI);
         double tunedTranslationD = SmartDashboard.getNumber("translation controller kd", kTranslationD);
 
-        this.xController.setPID(tunedTranslationP, tunedTranslationI, tunedTranslationD);
-        this.zController.setPID(tunedTranslationP, tunedTranslationI, tunedTranslationD);
+        this.positionController.setPID(tunedTranslationP, tunedTranslationI, tunedTranslationD);
 
         double tunedRotationP = SmartDashboard.getNumber("rotation controller kp", kRotationP);
         double tunedRotationI = SmartDashboard.getNumber("rotation controller ki", kRotationI);
@@ -86,8 +85,7 @@ public class TuneDriveToTarget extends Command {
         double desiredDz = this.desiredDzSupplier.getAsDouble();
         double desiredDTheta = this.desiredDThetaSupplier.getAsDouble();
 
-        this.xController.setSetpoint(desiredDx);
-        this.zController.setSetpoint(desiredDz);
+        this.positionController.setSetpoint(0.0);
         this.thetaController.setSetpoint(desiredDTheta);
 
         double actualDx;
@@ -103,9 +101,12 @@ public class TuneDriveToTarget extends Command {
 
             Transform3d relativeCameraPosition = bestTarget.getBestCameraToTarget();
 
-            actualDx = relativeCameraPosition.getX();
-            actualDz = relativeCameraPosition.getZ();
-            actualDTheta = relativeCameraPosition.getRotation().getY();
+            // goofy ah coordinate system
+            // these are from robot looking at tag
+            actualDx = -relativeCameraPosition.getY();
+            actualDz = relativeCameraPosition.getX();
+            actualDTheta = relativeCameraPosition.getRotation().getX() * 180.0 / Math.PI;
+
         } else {
             actualDx = desiredDx;
             actualDz = desiredDz;
@@ -116,16 +117,22 @@ public class TuneDriveToTarget extends Command {
         SmartDashboard.putNumber("actual target dz", actualDz);
         SmartDashboard.putNumber("actual target dtheta", actualDTheta);
 
+        double errorX = desiredDx - actualDx;
+        double errorZ = desiredDz - actualDz;
+        double errorPosition = Math.hypot(errorX, errorZ);
 
-        double xControllerOutput = this.xController.calculate(actualDx);
-        double zControllerOutput = this.zController.calculate(actualDz);
-        double thetaControllerOutput = this.thetaController.calculate(actualDTheta);
+        double positionControllerOutput = MathUtil.clamp(this.positionController.calculate(errorPosition), -0.3, 0.3);
+        double thetaControllerOutput = MathUtil.clamp(this.thetaController.calculate(actualDTheta), -0.3, 0.3);
 
-        SmartDashboard.putNumber("x controller output", xControllerOutput);
-        SmartDashboard.putNumber("z controller output", zControllerOutput);
+        SmartDashboard.putNumber("position controller output", positionControllerOutput);
         SmartDashboard.putNumber("theta controller output", thetaControllerOutput);
-
-        // TODO: check vision outputs before actually calling drive
-        // this.drivetrain.drive(zControllerOutput, xControllerOutput, thetaControllerOutput, false);
+        
+        double xComponentOfError = errorX / errorPosition;
+        double zComponentOfError = errorZ / errorPosition;
+        
+        double outputX = MathUtil.clamp(xComponentOfError * positionControllerOutput, -0.3, 0.3);
+        double outputZ = MathUtil.clamp(zComponentOfError * positionControllerOutput, -0.3, 0.3);
+        
+        this.drivetrain.drive(outputX, outputZ, thetaControllerOutput, false);
     }
 }

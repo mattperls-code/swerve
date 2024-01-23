@@ -1,15 +1,14 @@
 package org.robolancers321.subsystems.drivetrain;
 
-import com.ctre.phoenix.sensors.AbsoluteSensorRange;
-import com.ctre.phoenix.sensors.CANCoder;
-import com.ctre.phoenix.sensors.CANCoderConfiguration;
-import com.ctre.phoenix.sensors.SensorInitializationStrategy;
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.hardware.CANcoder;
+import com.ctre.phoenix6.signals.SensorDirectionValue;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
-import com.revrobotics.SparkMaxPIDController;
-import com.revrobotics.CANSparkMax.ControlType;
-import com.revrobotics.CANSparkMax.IdleMode;
-import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+import com.revrobotics.SparkPIDController;
+import com.revrobotics.CANSparkBase.ControlType;
+import com.revrobotics.CANSparkBase.IdleMode;
+import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
@@ -24,30 +23,32 @@ public class SwerveModule {
      * Singletons
      */
 
+    // TODO: change these for new robot
+
     private static SwerveModule frontLeft = null;
     public static SwerveModule getFrontLeft(){
-        if (frontLeft == null) frontLeft = new SwerveModule("Front Left", 4, 3, 15, true, false, false, 415.546875);
+        if (frontLeft == null) frontLeft = new SwerveModule("Front Left", 4, 3, 15, false, false, false, -0.342529);
 
         return frontLeft;
     }
 
     private static SwerveModule frontRight = null;
     public static SwerveModule getFrontRight(){
-        if (frontRight == null) frontRight = new SwerveModule("Front Right", 6, 5, 16, false, false, false, -84.7265625);
+        if (frontRight == null) frontRight = new SwerveModule("Front Right", 6, 5, 16, false, false, false, -0.238281);
 
         return frontRight;
     }
 
     private static SwerveModule backLeft = null;
     public static SwerveModule getBackLeft(){
-        if (backLeft == null) backLeft = new SwerveModule("Back Left", 2, 1, 14, false, false, false, 298.65234375);
+        if (backLeft == null) backLeft = new SwerveModule("Back Left", 2, 1, 14, true, false, false, 0.325928);
 
         return backLeft;
     }
 
     private static SwerveModule backRight = null;
     public static SwerveModule getBackRight(){
-        if (backRight == null) backRight = new SwerveModule("Back Right", 8, 7, 13, true, false, false, 349.98046875);
+        if (backRight == null) backRight = new SwerveModule("Back Right", 8, 7, 13, true, false, false, -0.016357);
 
         return backRight;
     }
@@ -56,27 +57,22 @@ public class SwerveModule {
      * Constants
      */
 
-    private static final CANCoderConfiguration kCANCoderConfig = new CANCoderConfiguration();
+    // TODO: change these for new robot
 
-    static {
-        kCANCoderConfig.sensorCoefficient = (2.0 * Math.PI) / (4096.0);
-        kCANCoderConfig.unitString = "rad";
-        kCANCoderConfig.absoluteSensorRange = AbsoluteSensorRange.Signed_PlusMinus180;
-        kCANCoderConfig.initializationStrategy = SensorInitializationStrategy.BootToAbsolutePosition;
-    }
+    private static final CANcoderConfiguration kCANCoderConfig = new CANcoderConfiguration();
 
-    private static final double kWheelRadiusMeters = Units.inchesToMeters(1.5);
+    private static final double kWheelRadiusMeters = Units.inchesToMeters(2.0);
     private static final double kGearRatio = 6.8;
     private static final double kRPMToMPS = 2 * Math.PI * kWheelRadiusMeters / (kGearRatio * 60.0);
 
     private static final double kDriveP = 0.00;
     private static final double kDriveI = 0.00;
     private static final double kDriveD = 0.00;
-    private static final double kDriveFF = 0.20;
+    private static final double kDriveFF = 0.266;
 
     private static final double kTurnP = 0.50;
     private static final double kTurnI = 0.00;
-    private static final double kTurnD = 0.00;
+    private static final double kTurnD = 0.005;
 
     /*
      * Implementation
@@ -88,9 +84,9 @@ public class SwerveModule {
     private CANSparkMax turnMotor;
 
     private RelativeEncoder driveEncoder;
-    private CANCoder turnEncoder;
+    private CANcoder turnEncoder;
 
-    private SparkMaxPIDController driveController;
+    private SparkPIDController driveController;
     private PIDController turnController;
 
     private SwerveModule(String id, int driveMotorPort, int turnMotorPort, int turnEncoderPort, boolean invertDriveMotor, boolean invertTurnMotor, boolean invertTurnEncoder, double turnEncoderOffset){
@@ -128,13 +124,13 @@ public class SwerveModule {
         this.turnMotor.enableVoltageCompensation(12);
         this.turnMotor.burnFlash();
 
-        this.turnEncoder = new CANCoder(turnEncoderPort);
+        this.turnEncoder = new CANcoder(turnEncoderPort);
 
-        CANCoderConfiguration config = kCANCoderConfig;
-        config.magnetOffsetDegrees = turnEncoderOffset;
-        config.sensorDirection = invertTurnEncoder;
+        CANcoderConfiguration config = kCANCoderConfig;
+        config.MagnetSensor.withMagnetOffset(turnEncoderOffset);
+        config.MagnetSensor.withSensorDirection(invertTurnEncoder ? SensorDirectionValue.Clockwise_Positive : SensorDirectionValue.CounterClockwise_Positive);
 
-        this.turnEncoder.configAllSettings(config);
+        this.turnEncoder.getConfigurator().apply(config);
 
         this.turnController = new PIDController(kTurnP, kTurnI, kTurnD);
         this.turnController.enableContinuousInput(-Math.PI, Math.PI);
@@ -145,7 +141,7 @@ public class SwerveModule {
     }
 
     public double getTurnAngleRad(){
-        return this.turnEncoder.getAbsolutePosition();
+        return this.turnEncoder.getAbsolutePosition().getValue() * 2 * Math.PI; // TODO: conversion rate?
     }
 
     public double getTurnAngleDeg(){
