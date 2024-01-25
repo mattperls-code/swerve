@@ -4,7 +4,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.XboxController;
 
 public class TeleopDrive extends FeedForwardDrive {
-    private static final double kTeleopMaxTranslationalSpeed = 2.5;
+    private static final double kTeleopMaxTranslationalSpeed = 1.5;
     private static final double kTeleopMaxRotationalSpeed = 1.0;
 
     public TeleopDrive(XboxController controller, boolean fieldCentric){

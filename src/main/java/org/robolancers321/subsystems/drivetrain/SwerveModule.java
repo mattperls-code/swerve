@@ -27,28 +27,28 @@ public class SwerveModule {
 
     private static SwerveModule frontLeft = null;
     public static SwerveModule getFrontLeft(){
-        if (frontLeft == null) frontLeft = new SwerveModule("Front Left", 4, 3, 15, false, false, false, -0.342529);
+        if (frontLeft == null) frontLeft = new SwerveModule("Front Left", 2, 1, 9, false, true, false, -0.265869140625);
 
         return frontLeft;
     }
 
     private static SwerveModule frontRight = null;
     public static SwerveModule getFrontRight(){
-        if (frontRight == null) frontRight = new SwerveModule("Front Right", 6, 5, 16, false, false, false, -0.238281);
+        if (frontRight == null) frontRight = new SwerveModule("Front Right", 4, 3, 10, true, true, false, 0.291748046875);
 
         return frontRight;
     }
 
     private static SwerveModule backLeft = null;
     public static SwerveModule getBackLeft(){
-        if (backLeft == null) backLeft = new SwerveModule("Back Left", 2, 1, 14, true, false, false, 0.325928);
+        if (backLeft == null) backLeft = new SwerveModule("Back Left", 8, 7, 12, true, true, false, -0.35986328125);
 
         return backLeft;
     }
 
     private static SwerveModule backRight = null;
     public static SwerveModule getBackRight(){
-        if (backRight == null) backRight = new SwerveModule("Back Right", 8, 7, 13, true, false, false, -0.016357);
+        if (backRight == null) backRight = new SwerveModule("Back Right", 6, 5, 11, true, true, false, -0.4599609375);
 
         return backRight;
     }
@@ -68,11 +68,11 @@ public class SwerveModule {
     private static final double kDriveP = 0.00;
     private static final double kDriveI = 0.00;
     private static final double kDriveD = 0.00;
-    private static final double kDriveFF = 0.266;
+    private static final double kDriveFF = 0.22;
 
-    private static final double kTurnP = 0.50;
+    private static final double kTurnP = 0.4; // 0.50;
     private static final double kTurnI = 0.00;
-    private static final double kTurnD = 0.005;
+    private static final double kTurnD = 0.005; // 0.005;
 
     /*
      * Implementation
@@ -103,10 +103,13 @@ public class SwerveModule {
         this.driveMotor.setIdleMode(IdleMode.kBrake);
         this.driveMotor.setSmartCurrentLimit(40);
         this.driveMotor.enableVoltageCompensation(12);
-        this.driveMotor.burnFlash();
 
         this.driveEncoder = this.driveMotor.getEncoder();
+
+        this.driveEncoder.setPositionConversionFactor(kRPMToMPS * 60.0);
         this.driveEncoder.setVelocityConversionFactor(kRPMToMPS);
+
+        this.driveMotor.burnFlash();
 
         this.driveController = this.driveMotor.getPIDController();
         this.driveController.setP(kDriveP);
